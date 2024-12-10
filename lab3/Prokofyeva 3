@@ -1,0 +1,77 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <locale.h>
+
+// быки: ц +, п +
+// коровы: ц +, п -
+int main() {
+    int n, i, j, bulls, cows, flag;
+    int player_number[5], computer_number[5], alfavit[10];
+    setlocale(LC_ALL, "Rus");
+
+    srand(time(NULL));
+
+    do {
+        printf("введите длину загадываемого числа (от 2 до 5): ");
+        scanf_s("%d", &n);
+    } while (n < 2 || n > 5);
+
+    for (i = 0; i < 10; i++) alfavit[i] = 0; // обнуление
+    for (i = 0; i < n; i++) {
+        do {
+            computer_number[i] = rand() % 10; 
+        } while (alfavit[computer_number[i]] || (i == 0 && computer_number[i] == 0)); 
+        alfavit[computer_number[i]] = 1; 
+    }
+    printf("компьютер загадал число, состоящее из %d цифр \n", n);
+    
+    while (1) {
+        bulls = 0;
+        cows = 0; 
+        flag = 1;
+        printf("введите число: ");
+        for (i = 0; i < n; i++) {
+            scanf_s("%1d", &player_number[i]);
+        }
+
+        // уникальность цифр
+        for (i = 0; i < n - 1; i++) {
+            for (j = i + 1; j < n; j++) {
+                if (player_number[i] == player_number[j]) {
+                    flag = 0;
+                    break;
+                }
+            }
+            if (!flag) break;
+        }
+
+        if (!flag) {
+            printf("цифры в числе не должны повторяться.. \n");
+            continue;
+        }
+
+        for (i = 0; i < n; i++) {
+            if (player_number[i] == computer_number[i]) {
+                bulls++; 
+            }
+            else {
+                for (j = 0; j < n; j++) {
+                    if (player_number[i] == computer_number[j]) {
+                        cows++; 
+                        break;
+                    }
+                }
+            }
+        }
+
+        printf("быки: %d, коровы: %d\n", bulls, cows);
+
+        if (bulls == n) {
+            printf("число угадано !!! :) \n");
+            break;
+        }
+    }
+
+    return 0;
+}
