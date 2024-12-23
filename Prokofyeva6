@@ -1,0 +1,122 @@
+#include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
+#include <locale.h>
+
+#define MAX_TERMS 1000
+#define MIN_ACCURACY 0.000001
+
+typedef double (*Taylors_time_function)(double x, int n);
+
+double Taylor_sinx(double x, int n) {
+    return (n % 2 == 0 ? 1 : -1) * pow(x, 2 * n + 1) / tgamma(2 * n + 2);
+}
+
+double Taylor_cosx(double x, int n) {
+    return (n % 2 == 0 ? 1 : -1) * pow(x, 2 * n) / tgamma(2 * n + 1);
+}
+
+double Taylor_expx(double x, int n) {
+    return pow(x, n) / tgamma(n + 1);
+}
+
+double Taylor_thx(double x, int n) {
+    double coef = n % 2 == 0 ? 0 : pow(2, n) * (pow(2, n) - 1) / tgamma(n + 1);
+    return coef * pow(x, n);
+}
+
+// сумма ряда тейлора 
+int Calculate_taylor_series(double x, double accuracy, int max_terms, Taylors_time_function term_func, double* result) {
+    double sum = 0.0, term;
+    for (int n = 0; n < max_terms; ++n) {
+        term = term_func(x, n);
+        sum += term;
+        if (fabs(term) < accuracy) {
+            *result = sum;
+            return n + 1;
+        }
+    }
+    *result = sum;
+    return max_terms;
+}
+
+//  (режим 1)
+void One_time_calculation_of_the_function(double (*exact_func)(double), Taylors_time_function term_func) {
+    double x, Accuracy_of_values, Result, exact_value;
+    int Max_terms, Used_terms;
+
+    printf("введите значение x (для разделения целой и дробной частей используйте ','): ");
+    scanf_s("%lf", &x);
+
+    printf("введите точность вычислений (не менее %.6f) (для разделения целой и дробной частей используйте ','): ", MIN_ACCURACY);
+    scanf_s("%lf", &Accuracy_of_values);
+    if (Accuracy_of_values < MIN_ACCURACY) Accuracy_of_values = MIN_ACCURACY;
+
+    printf("введите максимальное число членов ряда (1-%d): ", MAX_TERMS);
+    scanf_s("%d", &Max_terms);
+    if (Max_terms < 1 || Max_terms > MAX_TERMS) Max_terms = MAX_TERMS;
+
+    exact_value = exact_func(x);
+    Used_terms = Calculate_taylor_series(x, Accuracy_of_values, Max_terms, term_func, &Result);
+
+    printf("\nРезультаты:\n");
+    printf("эталонное значение: %.10f\n", exact_value);
+    printf("вычисленная оценка: %.10f\n", Result);
+    printf("разница: %.10f\n", fabs(Result - exact_value));
+    printf("использовано членов ряда: %d\n", Used_terms);
+}
+
+//  (режим 2)
+void serial_experiment(double (*exact_func)(double), Taylors_time_function term_func) {
+    double x, Exact_value, Result;
+    int Nmax;
+
+    printf("введите значение x (для разделения целой и дробной частей используйте ','): ");
+    scanf_s("%lf", &x);
+
+    printf("введите число экспериментов (1-25): ");
+    scanf_s("%d", &Nmax);
+    if (Nmax < 1 || Nmax > 25) Nmax = 25;
+
+    Exact_value = exact_func(x);
+    printf("\nэталонное значение: %.10f\n", Exact_value);
+    printf("\nтаблица результатов:\n");
+    printf("N\tвычисленная оценка\tразница\n");
+
+    for (int n = 1; n <= Nmax; ++n) {
+        Calculate_taylor_series(x, 0.0, n, term_func, &Result);
+        printf("%d\t%.10f\t%.10f\n", n, Result, fabs(Result - Exact_value));
+    }
+}
+
+int main() {
+    int Mode, Func_choice;
+    double (*Exact_funcs[])(double) = { sin, cos, exp, tanh };
+    Taylors_time_function Term_funcs[] = { Taylor_sinx, Taylor_cosx, Taylor_expx, Taylor_thx };
+    setlocale(LC_ALL, "Rus");
+
+    printf("выберите режим работы:\n1. однократный расчет функции\n2. серийный эксперимент\n ");
+    scanf_s("%d", &Mode);
+
+    if (Mode != 1 && Mode != 2) {
+        printf("неверный режим!!\n");
+        return 1;
+    }
+
+    printf("выберите функцию:\n1. sin(x)\n2. cos(x)\n3. exp(x)\n4. th(x)\n ");
+    scanf_s("%d", &Func_choice);
+
+    if (Func_choice < 1 || Func_choice > 4) {
+        printf("неверный выбор функции!!\n");
+        return 1;
+    }
+
+    if (Mode == 1) {
+        One_time_calculation_of_the_function(Exact_funcs[Func_choice - 1], Term_funcs[Func_choice - 1]);
+    }
+    else {
+        serial_experiment(Exact_funcs[Func_choice - 1], Term_funcs[Func_choice - 1]);
+    }
+
+    return 0;
+}
